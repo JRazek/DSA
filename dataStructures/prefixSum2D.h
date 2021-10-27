@@ -10,8 +10,8 @@ class PrefixSUM2D{
     std::vector<std::vector<T>> data;
 public:
     PrefixSUM2D(uint32_t _n, uint32_t _m):n(_n), m(_m), data(n+1, std::vector<T>(m+1, 0)){}
-    PrefixSUM2D(const PrefixSUM2D &prefixSUM2D) = default;
-    PrefixSUM2D(PrefixSUM2D &&prefixSUM2D) = default;
+    PrefixSUM2D(const PrefixSUM2D& prefixSUM2D) = default;
+    PrefixSUM2D(PrefixSUM2D&& prefixSUM2D) = default;
 
     void setCell(uint32_t x, uint32_t y, const T &val){
         data[x+1][y+1] = val;
