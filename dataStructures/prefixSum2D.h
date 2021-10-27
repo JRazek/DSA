@@ -20,8 +20,8 @@ public:
         return data[x+1][y+1];
     }
     void precompute(){
-        for(auto y = 0; y < cols; y++){
-            for(auto x = 0; x < rows; x++){
+        for(auto y = 0; y < rows; y++){
+            for(auto x = 0; x < cols; x++){
                 int v0=0, v1=0, v2=0, v3=0;
                 if(x>0 && y>0)
                     v0 = rangeSum(0, 0, x-1, y-1);
