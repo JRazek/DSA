@@ -10,7 +10,9 @@ class SegmentTree{
     std::vector<T> data;
     int realSize;
     void precompute(){
-        for(auto i = 0; i < data.size(); i ++){
+        int height = log2(data.size()+1);
+        int firstFloorID = pow(2, height - 1) - 1;
+        for(auto i = 0; i < firstFloorID; i ++){
             
         }
     }
