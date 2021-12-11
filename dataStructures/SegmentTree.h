@@ -2,39 +2,50 @@
 #include <cmath>
 #include <cstdint>
 
-
-template<
-typename T = unsigned long long,
-typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-class SegmentTree{
-    std::vector<T> data;
-    int realSize;
-    void precompute(){
-        int height = log2(data.size()+1);
-        int firstFloorID = pow(2, height - 1) - 1;
-        for(auto i = 0; i < firstFloorID; i ++){
-            
+namespace sgNs{
+    enum class SGMODE{
+        MIN,
+        MAX,
+        SUM,
+    };
+    template<
+        SGMODE Mode,
+        typename Y,
+        typename T = u_int64_t,
+        typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
+    >
+    class SegmentTree{
+    public:
+        struct Node{
+            T numericVal;
+            Y data;
+        };
+    private:
+        std::vector<Node> data;
+        u_int realSize;
+    public:
+        SegmentTree(const std::vector<Node>& _data){
+            realSize = std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1;
+            u_int height = std::ceil(std::log2(data.size()))+1;
+            int firstFloorID = std::pow(2, height - 1) - 1;
+            data = std::vector<Node>(realSize - _data.size());
+            std::copy(_data.begin(), _data.end(), data.begin());
         }
-    }
-public:
-    SegmentTree(const std::vector<T>& _data){
-        realSize = std::pow(2, (std::ceil(std::log2(data.size())) + 1)) - 1;
-        data = std::vector<T>(realSize - _data.size());
-        data.insert(_data.begin(), _data.end(), data.begin());
-    }
-    SegmentTree(const SegmentTree& SegmentTree) = default;
-    SegmentTree(SegmentTree&& SegmentTree) = default;
-    int getChildID(int parentID, bool left){
-        return (parentID + 1)*2 + !left - 1;
-    }
-    int getParentID(int childID){
-        return (childID - 1)/2;
-    }
-    T rangeSum(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) const{
-        x0++;
-        y0++;
-        x1++;
-        y1++;
-        return data[x1][y1] - data[x0-1][y1] - data[x1][y0-1] + data[x0-1][y0-1];
-    }
-};
+
+        u_int getChildID(u_int parentID, bool left){
+            return (parentID + 1)*2 + !left - 1;
+        }
+        u_int getParentID(u_int childID){
+            return (childID - 1)/2;
+        }
+        std::vector<Node> rangeQuery(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) const{
+            if constexpr(Mode == SGMODE::SUM){
+                
+            }else if constexpr(Mode == SGMODE::MIN){
+
+            }else if constexpr(Mode == SGMODE::MAX){
+
+            }
+        }
+    };
+}
