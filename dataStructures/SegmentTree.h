@@ -40,15 +40,20 @@ namespace sgNs{
         void preprocess(){
             u_int fdID=firstFloorID();
             for(int i = firstFloorID()-1; i>=0; i--){
+                T left=nodes[childID(i, true)].numericVal;
+                T right=nodes[childID(i, false)].numericVal;
                 if constexpr(Mode == SGMODE::SUM){
-                    nodes[i].numericVal = nodes[childID(i, true)].numericVal+nodes[childID(i, false)].numericVal;
+                    nodes[i].numericVal = left+right;
+                }else if constexpr(Mode == SGMODE::XOR){
+                    nodes[i].numericVal = left^right;
+                }else if constexpr(Mode == SGMODE::MAX){
+                    
                 }else if constexpr(Mode == SGMODE::MIN){
                     
                 }else if constexpr(Mode == SGMODE::MAX){
 
                 }
             }
-            std::cout<<"";
         }
         std::list<u_int> rangeQuery(Range r, u_int parent) const{
             if(r.low > r.high)
@@ -61,11 +66,10 @@ namespace sgNs{
             std::list<u_int> left = rangeQuery(r, childID(parent, true));
             std::list<u_int> right = rangeQuery(r, childID(parent, false));
 
-            left.insert(left.end(), right.begin(), right.end());
+            left.splice(left.end(), right);
 
             return left;
         }
-
     public:
         SegmentTree(const std::vector<Node>& _data):
         nodes(std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1),
@@ -98,14 +102,6 @@ namespace sgNs{
         }
         T rangeQuery(Range r){
             std::list<u_int> q=rangeQuery(r, 0);
-
-            if constexpr(Mode == SGMODE::SUM){
-                
-            }else if constexpr(Mode == SGMODE::MIN){
-
-            }else if constexpr(Mode == SGMODE::MAX){
-
-            }
             return T();
         }
     };
