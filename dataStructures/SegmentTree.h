@@ -14,8 +14,8 @@ namespace sgNs{
     };
     template<
         typename T = u_int64_t,
-        typename Y = void*
-        // typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
+        typename Y = void*,
+        typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
     >
     class SegmentTreeBase{
     public:
@@ -105,6 +105,9 @@ namespace sgNs{
             return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
                 return s+Base::nodes[i2].numericVal;
             });
+        }
+        void lazyAdd(typename Base::Range r, const T v){
+            
         }
     };
     template<
