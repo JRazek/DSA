@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <list>
 #include <iostream>
+#include <numeric>
 
 namespace sgNs{
     enum class SGMODE{
@@ -32,7 +33,7 @@ namespace sgNs{
                 return low==r.low&&high==r.high;
             };
         };
-    private:
+    protected:
         std::vector<Node> nodes;
         u_int realSize;
 
@@ -90,22 +91,43 @@ namespace sgNs{
     class SumSegmentTree : public SegmentTreeBase<T, Y> {
         using Base = SegmentTreeBase<T, Y>;
     public:
-
-        SumSegmentTree(const std::vector<Base::Node>& _data):
+        SumSegmentTree(const std::vector<typename Base::Node>& _data):
         Base(_data){
             u_int fdID=Base::firstFloorID();
             for(int i = Base::firstFloorID()-1; i>=0; i--){
-                const T left=nodes[Base::childID(i, true)].numericVal;
-                const T right=nodes[Base::childID(i, false)].numericVal;
-                nodes[i].numericVal = left+right;
+                const T left=Base::nodes[Base::childID(i, true)].numericVal;
+                const T right=Base::nodes[Base::childID(i, false)].numericVal;
+                Base::nodes[i].numericVal = left+right;
             }
         }
-        T rangeQuery(Base::Range r){
-            T s=0;
+        T rangeQuery(typename Base::Range r){
             const auto l = Base::rangeQuery(r, 0);
-            for(const auto n : l){
-                s+=n;
+            return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
+                return s+Base::nodes[i2].numericVal;
+            });
+        }
+    };
+    template<
+        typename T = u_int64_t,
+        typename Y = void*
+    >
+    class XORSegmentTree : public SegmentTreeBase<T, Y> {
+        using Base = SegmentTreeBase<T, Y>;
+    public:
+        XORSegmentTree(const std::vector<typename Base::Node>& _data):
+        Base(_data){
+            u_int fdID=Base::firstFloorID();
+            for(int i = Base::firstFloorID()-1; i>=0; i--){
+                const T left=Base::nodes[Base::childID(i, true)].numericVal;
+                const T right=Base::nodes[Base::childID(i, false)].numericVal;
+                Base::nodes[i].numericVal = left+right;
             }
+        }
+        T rangeQuery(typename Base::Range r){
+            const auto l = Base::rangeQuery(r, 0);
+            return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2) {
+                return s^Base::nodes[i2].numericVal;
+            });
         }
     };
 }
