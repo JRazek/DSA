@@ -6,12 +6,6 @@
 #include <numeric>
 
 namespace sgNs{
-    enum class SGMODE{
-        SUM,
-        XOR,
-        MIN,
-        MAX,
-    };
     template<
         typename T = u_int64_t,
         typename Y = void*,
@@ -37,21 +31,6 @@ namespace sgNs{
         std::vector<Node> nodes;
         u_int realSize;
 
-        std::list<u_int> rangeQuery(Range r, u_int parent) const{
-            if(r.low > r.high)
-                return {};
-            Range nr=nodeRange(parent);
-            r=r.common(nr);
-            if(nr==r){
-                return {parent};
-            }
-            std::list<u_int> left = rangeQuery(r, childID(parent, true));
-            std::list<u_int> right = rangeQuery(r, childID(parent, false));
-
-            left.splice(left.end(), right);
-
-            return left;
-        }
     public:
         SegmentTreeBase(const std::vector<Node>& _data):
         nodes(std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1),
@@ -90,9 +69,18 @@ namespace sgNs{
     >
     class SumSegmentTree : public SegmentTreeBase<T, Y> {
         using Base = SegmentTreeBase<T, Y>;
+        std::vector<T> lazyValues;
+        void lazyProp(u_int parent){
+            typename Base::Range nr=Base::nodeRange(parent);
+            Base::nodes[parent].numericVal+=lazyValues[parent]*(nr.high-nr.low+1);
+            lazyValues[Base::childID(parent, true)]+=lazyValues[parent];
+            lazyValues[Base::childID(parent, false)]+=lazyValues[parent];
+            lazyValues[parent]=0;
+        }
     public:
         SumSegmentTree(const std::vector<typename Base::Node>& _data):
-        Base(_data){
+        Base(_data),
+        lazyValues(Base::nodes.size()){
             u_int fdID=Base::firstFloorID();
             for(int i = Base::firstFloorID()-1; i>=0; i--){
                 const T left=Base::nodes[Base::childID(i, true)].numericVal;
@@ -100,37 +88,58 @@ namespace sgNs{
                 Base::nodes[i].numericVal = left+right;
             }
         }
+        std::list<u_int> rangeQuery(typename Base::Range r, u_int parent, T lazyTail=T()) {
+            if(r.low > r.high)
+                return {};
+            typename Base::Range nr=Base::nodeRange(parent);
+        
+            r=r.common(nr);
+
+            lazyProp(parent);
+            if(nr==r){
+                lazyValues[parent]+=lazyTail;
+                return {parent};
+            }else{
+                Base::nodes[parent].numericVal+=lazyTail*(r.high-r.low+1);
+            }
+            std::list<u_int> left = rangeQuery(r, Base::childID(parent, true), lazyTail);
+            std::list<u_int> right = rangeQuery(r, Base::childID(parent, false), lazyTail);
+
+            left.splice(left.end(), right);
+
+            return left;
+        }
         T rangeQuery(typename Base::Range r){
-            const auto l = Base::rangeQuery(r, 0);
+            const auto l = rangeQuery(r, 0);
             return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
                 return s+Base::nodes[i2].numericVal;
             });
         }
         void lazyAdd(typename Base::Range r, const T v){
-            
+            rangeQuery(r, 0, v);
         }
     };
-    template<
-        typename T = u_int64_t,
-        typename Y = void*
-    >
-    class XORSegmentTree : public SegmentTreeBase<T, Y> {
-        using Base = SegmentTreeBase<T, Y>;
-    public:
-        XORSegmentTree(const std::vector<typename Base::Node>& _data):
-        Base(_data){
-            u_int fdID=Base::firstFloorID();
-            for(int i = Base::firstFloorID()-1; i>=0; i--){
-                const T left=Base::nodes[Base::childID(i, true)].numericVal;
-                const T right=Base::nodes[Base::childID(i, false)].numericVal;
-                Base::nodes[i].numericVal = left+right;
-            }
-        }
-        T rangeQuery(typename Base::Range r){
-            const auto l = Base::rangeQuery(r, 0);
-            return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2) {
-                return s^Base::nodes[i2].numericVal;
-            });
-        }
-    };
+    // template<
+    //     typename T = u_int64_t,
+    //     typename Y = void*
+    // >
+    // class XORSegmentTree : public SegmentTreeBase<T, Y> {
+    //     using Base = SegmentTreeBase<T, Y>;
+    // public:
+    //     XORSegmentTree(const std::vector<typename Base::Node>& _data):
+    //     Base(_data){
+    //         u_int fdID=Base::firstFloorID();
+    //         for(int i = Base::firstFloorID()-1; i>=0; i--){
+    //             const T left=Base::nodes[Base::childID(i, true)].numericVal;
+    //             const T right=Base::nodes[Base::childID(i, false)].numericVal;
+    //             Base::nodes[i].numericVal = left+right;
+    //         }
+    //     }
+    //     T rangeQuery(typename Base::Range r){
+    //         const auto l = Base::rangeQuery(r, 0);
+    //         return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2) {
+    //             return s^Base::nodes[i2].numericVal;
+    //         });
+    //     }
+    // };
 }
