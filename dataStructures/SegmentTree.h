@@ -12,12 +12,11 @@ namespace sgNs{
         MAX,
     };
     template<
-        SGMODE Mode = SGMODE::SUM,
         typename T = u_int64_t,
-        typename Y = void*,
-        typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
+        typename Y = void*
+        // typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
     >
-    class SegmentTree{
+    class SegmentTreeBase{
     public:
         struct Node{
             T numericVal;
@@ -37,24 +36,6 @@ namespace sgNs{
         std::vector<Node> nodes;
         u_int realSize;
 
-        void preprocess(){
-            u_int fdID=firstFloorID();
-            for(int i = firstFloorID()-1; i>=0; i--){
-                T left=nodes[childID(i, true)].numericVal;
-                T right=nodes[childID(i, false)].numericVal;
-                if constexpr(Mode == SGMODE::SUM){
-                    nodes[i].numericVal = left+right;
-                }else if constexpr(Mode == SGMODE::XOR){
-                    nodes[i].numericVal = left^right;
-                }else if constexpr(Mode == SGMODE::MAX){
-                    
-                }else if constexpr(Mode == SGMODE::MIN){
-                    
-                }else if constexpr(Mode == SGMODE::MAX){
-
-                }
-            }
-        }
         std::list<u_int> rangeQuery(Range r, u_int parent) const{
             if(r.low > r.high)
                 return {};
@@ -71,12 +52,11 @@ namespace sgNs{
             return left;
         }
     public:
-        SegmentTree(const std::vector<Node>& _data):
+        SegmentTreeBase(const std::vector<Node>& _data):
         nodes(std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1),
         realSize(_data.size())
         {
             std::copy(_data.begin(), _data.end(), nodes.begin()+firstFloorID());
-            preprocess();
         }
         u_int height() const{
             return std::log2(nodes.size()+1);
@@ -100,9 +80,32 @@ namespace sgNs{
             u_int shift=(nodeID-((u_int)std::pow(2, nh)-1))*std::pow(2, h-nh-1);
             return {shift, shift+sz-1};
         }
-        T rangeQuery(Range r){
-            std::list<u_int> q=rangeQuery(r, 0);
-            return T();
+    };
+
+    
+    template<
+        typename T = u_int64_t,
+        typename Y = void*
+    >
+    class SumSegmentTree : public SegmentTreeBase<T, Y> {
+        using Base = SegmentTreeBase<T, Y>;
+    public:
+
+        SumSegmentTree(const std::vector<Base::Node>& _data):
+        Base(_data){
+            u_int fdID=Base::firstFloorID();
+            for(int i = Base::firstFloorID()-1; i>=0; i--){
+                const T left=nodes[Base::childID(i, true)].numericVal;
+                const T right=nodes[Base::childID(i, false)].numericVal;
+                nodes[i].numericVal = left+right;
+            }
+        }
+        T rangeQuery(Base::Range r){
+            T s=0;
+            const auto l = Base::rangeQuery(r, 0);
+            for(const auto n : l){
+                s+=n;
+            }
         }
     };
 }
