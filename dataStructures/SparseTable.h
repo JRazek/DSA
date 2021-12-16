@@ -10,7 +10,7 @@ namespace stjr{
     //O(nlogn) preprocess
 
     template<
-        typename T = u_int64_t,
+        typename T = int64_t,
         typename Y = void*,
         typename AssocFunc = std::greater<T>,
         typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
@@ -43,9 +43,9 @@ namespace stjr{
         SparseTable(data, AssocFunc()){}
 
         SparseTable(const std::vector<Node>& data, const AssocFunc& _assocFunc):
-        table(std::log2(data.size()+1), std::vector<Node>(data.size())),
+        table(std::log2(data.size())+1, std::vector<Node>(data.size())),
         assocFunc(_assocFunc){
-            std::copy(data.begin(), data.end(), table.back().begin());
+            std::copy(data.begin(), data.end(), table.front().begin());
             for(u_int lvl=1; lvl<table.size(); lvl++){
                 u_int s=std::pow(2, lvl);
                 for(u_int l=0; l<=table[0].size()-s;l++){

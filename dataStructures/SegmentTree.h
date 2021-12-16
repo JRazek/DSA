@@ -176,7 +176,7 @@ namespace sgjr{
         typename Base::Node rangeQuery(typename Base::Range r){
             const auto l=rangeQuery(r, 0);
 
-            return Base::nodes[std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
+            return Base::nodes[std::accumulate(l.begin(), l.end(), l.front(), [&](const auto s, const auto i2){
                 return (assocFunc(Base::nodes[s].numericVal, Base::nodes[i2].numericVal)?s:i2);
             })];
         }
