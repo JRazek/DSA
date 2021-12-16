@@ -6,6 +6,10 @@
 #include <cmath>
 
 namespace dsjr{
+    //O(1) query time
+    //O(n) space
+    //O(n) preprocess
+
     template<
         typename T = u_int64_t,
         typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
