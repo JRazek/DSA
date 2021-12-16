@@ -7,6 +7,16 @@
 #include <functional>
 
 namespace sgNs{
+    template<typename T>
+    struct maximum {
+      T operator()(const T& x, const T& y) const { return std::max(x, y); }
+    };
+    
+    template<typename T>
+    struct minimum {
+      T operator()(const T& x, const T& y) const { return std::min(x, y); }
+    };
+
     template<
         typename T = u_int64_t,
         typename Y = void*,
@@ -40,7 +50,7 @@ namespace sgNs{
             std::copy(_data.begin(), _data.end(), nodes.begin()+firstFloorID());
         }
         u_int height() const{
-            return std::log2(nodes.size()+1);
+            return height(nodes.size());
         }
         u_int height(u_int nodeID) const{
             return std::log2(nodeID+1);
@@ -126,23 +136,34 @@ namespace sgNs{
     template<
         typename T = u_int64_t,
         typename Y = void*,
-        typename AssocFunc = std::function<T(const T&, const T&)>()
+        typename AssocFunc = maximum<T>
     >
     class AssocSegmentTree : public SegmentTreeBase<T, Y> {
         using Base = SegmentTreeBase<T, Y>;
         
         AssocFunc assocFunc;
-
-    public:
-        AssocSegmentTree(const std::vector<typename Base::Node>& _data, const AssocFunc& _assocFunc):
-        Base(_data),
-        assocFunc(_assocFunc){
+        void init(){
             u_int fdID=Base::firstFloorID();
             for(int i = Base::firstFloorID()-1; i>=0; i--){
                 const T left=Base::nodes[Base::childID(i, true)].numericVal;
                 const T right=Base::nodes[Base::childID(i, false)].numericVal;
                 Base::nodes[i].numericVal = assocFunc(left, right);
             }
+        }
+    public:
+        template<
+            typename AssocFuncT = AssocFunc,
+            typename = typename std::enable_if<std::is_default_constructible<AssocFuncT>::value>::type 
+        >
+        AssocSegmentTree(const std::vector<typename Base::Node>& _data):
+        Base(_data){
+            init();
+        }
+
+        AssocSegmentTree(const std::vector<typename Base::Node>& _data, const AssocFunc& _assocFunc):
+        Base(_data),
+        assocFunc(_assocFunc){
+            init();
         }
         std::list<u_int> rangeQuery(typename Base::Range r, u_int parent){
             typename Base::Range nr=Base::nodeRange(parent);
@@ -171,7 +192,7 @@ namespace sgNs{
         void update(u_int leaf, T v){
             u_int id=Base::firstFloorID()+leaf;
             Base::nodes[id].numericVal=v;
-            u_int h=Base::height(id)+1;
+            u_int h=Base::height();
             for(int i=0;i<h;i++){
                 Base::nodes[id].numericVal=assocFunc(Base::nodes[Base::childID(id, false)].numericVal, Base::nodes[Base::childID(id, true)].numericVal);
                 id=Base::parentID(id);
