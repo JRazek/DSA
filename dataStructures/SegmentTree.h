@@ -33,7 +33,7 @@ namespace sgNs{
 
     public:
         SegmentTreeBase(const std::vector<Node>& _data):
-        nodes(std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1),
+        nodes(std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1, {0, nullptr}),
         realSize(_data.size())
         {
             std::copy(_data.begin(), _data.end(), nodes.begin()+firstFloorID());
@@ -48,7 +48,8 @@ namespace sgNs{
             return std::pow(2, height()-1)-1;
         }
         u_int childID(u_int parentID, bool left) const{
-            return (parentID + 1)*2 + !left - 1;
+            u_int t=(parentID + 1)*2 + !left - 1;
+            return t<nodes.size()?t:parentID;
         }
         u_int getParentID(u_int childID) const{
             return (childID - 1)/2;
@@ -89,12 +90,11 @@ namespace sgNs{
             }
         }
         std::list<u_int> rangeQuery(typename Base::Range r, u_int parent, T lazyTail=T()) {
+            typename Base::Range nr=Base::nodeRange(parent);
+            r=r.common(nr);
             if(r.low > r.high)
                 return {};
-            typename Base::Range nr=Base::nodeRange(parent);
-        
-            r=r.common(nr);
-
+                
             lazyProp(parent);
             if(nr==r){
                 lazyValues[parent]+=lazyTail;
@@ -105,12 +105,13 @@ namespace sgNs{
             std::list<u_int> left = rangeQuery(r, Base::childID(parent, true), lazyTail);
             std::list<u_int> right = rangeQuery(r, Base::childID(parent, false), lazyTail);
 
-            left.splice(left.end(), right);
+            left.splice(left.begin(), right);
 
             return left;
         }
         T rangeQuery(typename Base::Range r){
-            const auto l = rangeQuery(r, 0);
+            const auto l=rangeQuery(r, 0, 0);
+            std::cout<<"";
             return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
                 return s+Base::nodes[i2].numericVal;
             });
