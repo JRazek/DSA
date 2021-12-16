@@ -6,7 +6,7 @@
 #include <numeric>
 #include <functional>
 
-namespace sgNs{
+namespace dsjr{
     template<typename T>
     struct maximum {
       T operator()(const T& x, const T& y) const { return std::max(x, y); }
@@ -18,7 +18,7 @@ namespace sgNs{
     };
 
     template<
-        typename T = u_int64_t,
+        typename T = int64_t,
         typename Y = void*,
         typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
     >
@@ -76,7 +76,7 @@ namespace sgNs{
 
     
     template<
-        typename T = u_int64_t,
+        typename T = int64_t,
         typename Y = void*
     >
     class SumSegmentTree : public SegmentTreeBase<T, Y> {
@@ -134,7 +134,7 @@ namespace sgNs{
 
         
     template<
-        typename T = u_int64_t,
+        typename T = int64_t,
         typename Y = void*,
         typename AssocFunc = maximum<T>
     >
