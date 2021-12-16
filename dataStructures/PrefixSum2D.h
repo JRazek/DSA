@@ -1,3 +1,6 @@
+#ifndef PREFIX_SUM_DSJR
+#define PREFIX_SUM_DSJR
+
 #include <vector>
 #include <cstdint>
 #include <cmath>
@@ -46,3 +49,4 @@ namespace dsjr{
         }
     };
 }
+#endif

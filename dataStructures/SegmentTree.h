@@ -1,3 +1,6 @@
+#ifndef SEGMENT_TREE_DSJR
+#define SEGMENT_TREE_DSJR
+
 #include <vector>
 #include <cmath>
 #include <cstdint>
@@ -200,3 +203,4 @@ namespace dsjr{
         }
     };
 }
+#endif

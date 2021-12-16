@@ -1,3 +1,5 @@
+#ifndef SPARSE_TABLE_DSJR
+#define SPARSE_TABLE_DSJR
 namespace dsjr{
     template<
         typename T = u_int64_t,
@@ -7,3 +9,4 @@ namespace dsjr{
         
     }
 }
+#endif //SPARSE_TABLE_DSJR

@@ -1,11 +1,18 @@
 #include "SegmentTree.h"
+#include "PrefixSum2D.h"
 #include <bits/stdc++.h>
 #include <random>
 
 
 int main(){
     using namespace std;
-    using Sgtree = sgNs::SumSegmentTree<int>;
+    using namespace dsjr;
+
+    auto assoc=[](int a, int b){
+        return std::max(a, b);
+    };
+
+    using Sgtree = AssocSegmentTree<int, void*>;
     using Node = Sgtree::Node;
     using Range = Sgtree::Range;
     constexpr int N=1000;
@@ -23,27 +30,35 @@ int main(){
         }
     };
     
-    
     std::vector<Node> nodes(8);
     for(int i = 0; i<nodes.size(); i++){
         nodes[i]={1, nullptr};
     }
     
-    Sgtree segmentTree(nodes);
+    
+    
 
     Range r={0, 6};
-    segmentTree.lazyAdd(r, 1);
-    rangeAdd(r, nodes, 1);
+    // segmentTree.lazyAdd(r, 1);
+    // rangeAdd(r, nodes, 1);
 
-    Range rq={0, 7};
-    int sum1 = segmentTree.rangeQuery(rq);
-    int sum2 = summator(rq, nodes);
+    // Range rq={0, 7};
+    // int max1 = segmentTree.rangeQuery(rq);
+    // segmentTree.update(3, 5);
+    // segmentTree.update(3, 1);
+    // segmentTree.update(3, 2);
+    // int max2 = segmentTree.rangeQuery(rq);
+    // // int sum2 = summator(rq, nodes);
 
-    std::cout<<"";
+    // std::cout<<max1<<"\n";
+    // std::cout<<max2<<"\n";
     // std::vector<Node> nodes(N);
     // for(int i=0; i<N; i++){
     //     nodes[i]={i, nullptr};
     // }
+
+    
+    // Sgtree segmentTree(nodes);
     // std::shuffle(nodes.begin(), nodes.end(), std::random_device());
 
     // Sgtree segmentTree(nodes);
