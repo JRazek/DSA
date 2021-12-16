@@ -4,6 +4,7 @@
 #include <list>
 #include <iostream>
 #include <numeric>
+#include <functional>
 
 namespace sgNs{
     template<
@@ -51,7 +52,7 @@ namespace sgNs{
             u_int t=(parentID + 1)*2 + !left - 1;
             return t<nodes.size()?t:parentID;
         }
-        u_int getParentID(u_int childID) const{
+        u_int parentID(u_int childID) const{
             return (childID - 1)/2;
         }
         Range nodeRange(u_int nodeID) const{
@@ -120,27 +121,61 @@ namespace sgNs{
             rangeQuery(r, 0, v);
         }
     };
-    // template<
-    //     typename T = u_int64_t,
-    //     typename Y = void*
-    // >
-    // class XORSegmentTree : public SegmentTreeBase<T, Y> {
-    //     using Base = SegmentTreeBase<T, Y>;
-    // public:
-    //     XORSegmentTree(const std::vector<typename Base::Node>& _data):
-    //     Base(_data){
-    //         u_int fdID=Base::firstFloorID();
-    //         for(int i = Base::firstFloorID()-1; i>=0; i--){
-    //             const T left=Base::nodes[Base::childID(i, true)].numericVal;
-    //             const T right=Base::nodes[Base::childID(i, false)].numericVal;
-    //             Base::nodes[i].numericVal = left+right;
-    //         }
-    //     }
-    //     T rangeQuery(typename Base::Range r){
-    //         const auto l = Base::rangeQuery(r, 0);
-    //         return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2) {
-    //             return s^Base::nodes[i2].numericVal;
-    //         });
-    //     }
-    // };
+
+        
+    template<
+        typename T = u_int64_t,
+        typename Y = void*,
+        typename AssocFunc = std::function<T(const T&, const T&)>()
+    >
+    class AssocSegmentTree : public SegmentTreeBase<T, Y> {
+        using Base = SegmentTreeBase<T, Y>;
+        
+        AssocFunc assocFunc;
+
+    public:
+        AssocSegmentTree(const std::vector<typename Base::Node>& _data, const AssocFunc& _assocFunc):
+        Base(_data),
+        assocFunc(_assocFunc){
+            u_int fdID=Base::firstFloorID();
+            for(int i = Base::firstFloorID()-1; i>=0; i--){
+                const T left=Base::nodes[Base::childID(i, true)].numericVal;
+                const T right=Base::nodes[Base::childID(i, false)].numericVal;
+                Base::nodes[i].numericVal = assocFunc(left, right);
+            }
+        }
+        std::list<u_int> rangeQuery(typename Base::Range r, u_int parent){
+            typename Base::Range nr=Base::nodeRange(parent);
+            r=r.common(nr);
+            if(r.low > r.high)
+                return {};
+                
+            if(nr==r){
+                return {parent};
+            }
+
+            std::list<u_int> left = rangeQuery(r, Base::childID(parent, true));
+            std::list<u_int> right = rangeQuery(r, Base::childID(parent, false));
+
+            left.splice(left.begin(), right);
+
+            return left;
+        }
+        T rangeQuery(typename Base::Range r){
+            const auto l=rangeQuery(r, 0);
+            std::cout<<"";
+            return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
+                return assocFunc(s, Base::nodes[i2].numericVal);
+            });
+        }
+        void update(u_int leaf, T v){
+            u_int id=Base::firstFloorID()+leaf;
+            Base::nodes[id].numericVal=v;
+            u_int h=Base::height(id)+1;
+            for(int i=0;i<h;i++){
+                Base::nodes[id].numericVal=assocFunc(Base::nodes[Base::childID(id, false)].numericVal, Base::nodes[Base::childID(id, true)].numericVal);
+                id=Base::parentID(id);
+            }
+        }
+    };
 }
