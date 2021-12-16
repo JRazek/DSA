@@ -9,16 +9,10 @@
 #include <numeric>
 #include <functional>
 
-namespace dsjr{
-    template<typename T>
-    struct maximum {
-      T operator()(const T& x, const T& y) const { return std::max(x, y); }
-    };
-    
-    template<typename T>
-    struct minimum {
-      T operator()(const T& x, const T& y) const { return std::min(x, y); }
-    };
+namespace sgjr{
+    //O(logn) query time
+    //O(2N) space
+    //O(N) preprocess
 
     template<
         typename T = int64_t,
@@ -47,7 +41,7 @@ namespace dsjr{
 
     public:
         SegmentTreeBase(const std::vector<Node>& _data):
-        nodes(std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1, {0, nullptr}),
+        nodes(std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1, {0, Y()}),
         realSize(_data.size())
         {
             std::copy(_data.begin(), _data.end(), nodes.begin()+firstFloorID());
@@ -139,35 +133,12 @@ namespace dsjr{
     template<
         typename T = int64_t,
         typename Y = void*,
-        typename AssocFunc = maximum<T>
+        typename AssocFunc = std::greater<T>
     >
     class AssocSegmentTree : public SegmentTreeBase<T, Y> {
         using Base = SegmentTreeBase<T, Y>;
-        
+    protected:
         AssocFunc assocFunc;
-        void init(){
-            u_int fdID=Base::firstFloorID();
-            for(int i = Base::firstFloorID()-1; i>=0; i--){
-                const T left=Base::nodes[Base::childID(i, true)].numericVal;
-                const T right=Base::nodes[Base::childID(i, false)].numericVal;
-                Base::nodes[i].numericVal = assocFunc(left, right);
-            }
-        }
-    public:
-        template<
-            typename AssocFuncT = AssocFunc,
-            typename = typename std::enable_if<std::is_default_constructible<AssocFuncT>::value>::type 
-        >
-        AssocSegmentTree(const std::vector<typename Base::Node>& _data):
-        Base(_data){
-            init();
-        }
-
-        AssocSegmentTree(const std::vector<typename Base::Node>& _data, const AssocFunc& _assocFunc):
-        Base(_data),
-        assocFunc(_assocFunc){
-            init();
-        }
         std::list<u_int> rangeQuery(typename Base::Range r, u_int parent){
             typename Base::Range nr=Base::nodeRange(parent);
             r=r.common(nr);
@@ -185,19 +156,38 @@ namespace dsjr{
 
             return left;
         }
-        T rangeQuery(typename Base::Range r){
+    public:
+        template<
+            typename AssocFuncT = AssocFunc,
+            typename = typename std::enable_if<std::is_default_constructible<AssocFuncT>::value>::type 
+        >
+        AssocSegmentTree(const std::vector<typename Base::Node>& _data):
+        AssocSegmentTree(_data, AssocFunc()){}
+
+        AssocSegmentTree(const std::vector<typename Base::Node>& _data, const AssocFunc& _assocFunc):
+        Base(_data),
+        assocFunc(_assocFunc){
+            for(int i = Base::firstFloorID()-1; i>=0; i--){
+                u_int left=Base::childID(i, true);
+                u_int right=Base::childID(i, false);
+                Base::nodes[i] = (assocFunc(Base::nodes[left].numericVal, Base::nodes[right].numericVal)?Base::nodes[left]:Base::nodes[right]);
+            }
+        }
+        typename Base::Node rangeQuery(typename Base::Range r){
             const auto l=rangeQuery(r, 0);
-            std::cout<<"";
-            return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
-                return assocFunc(s, Base::nodes[i2].numericVal);
-            });
+
+            return Base::nodes[std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
+                return (assocFunc(Base::nodes[s].numericVal, Base::nodes[i2].numericVal)?s:i2);
+            })];
         }
         void update(u_int leaf, T v){
             u_int id=Base::firstFloorID()+leaf;
             Base::nodes[id].numericVal=v;
             u_int h=Base::height();
+            u_int left=Base::childID(id, true);
+            u_int right=Base::childID(id, false);
             for(int i=0;i<h;i++){
-                Base::nodes[id].numericVal=assocFunc(Base::nodes[Base::childID(id, false)].numericVal, Base::nodes[Base::childID(id, true)].numericVal);
+                Base::nodes[id] = (assocFunc(Base::nodes[left].numericVal, Base::nodes[right].numericVal)?Base::nodes[left]:Base::nodes[right]);
                 id=Base::parentID(id);
             }
         }
