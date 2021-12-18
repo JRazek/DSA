@@ -119,7 +119,6 @@ namespace sgjr{
         }
         T rangeQuery(typename Base::Range r){
             const auto l=rangeQuery(r, 0, 0);
-            std::cout<<"";
             return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
                 return s+Base::nodes[i2].numericVal;
             });
@@ -193,4 +192,4 @@ namespace sgjr{
         }
     };
 }
-#endif
+#endif //SEGMENT_TREE_DSJR
