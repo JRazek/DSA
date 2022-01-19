@@ -27,7 +27,6 @@ namespace sgjr{
 
     template<
         typename T = int64_t,
-        typename Y = void*,
         typename AssocFunc = maximum<T>,
         typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
     >
@@ -74,14 +73,16 @@ namespace sgjr{
             //it will only go one level deeper due to full overlap condition.
             lazyUpdate({nr.low, (nr.low+nr.high)/2}, leftID, node.lazy);
             lazyUpdate({(nr.low+nr.high)/2+1, nr.high}, rightID, node.lazy);
-            node.lazy=T();
 
             if(qr==nr) result.emplace_back(nodeID); 
             else{
                 result.splice(result.end(), rangeQuery(qr, leftID));
                 result.splice(result.end(), rangeQuery(qr, rightID));
             }
-            node.asValue=assocFunc(nodes[leftID].asValue, nodes[rightID].asValue);
+            if(leftID<nodes.size()&&rightID<nodes.size())
+                node.asValue=assocFunc(nodes[leftID].asValue, nodes[rightID].asValue);
+            node.lazy=T();
+
             return result;
         }
         auto lazyUpdate(Range qr, int nodeID, int value) -> void {
@@ -93,19 +94,22 @@ namespace sgjr{
 
             auto& node=nodes[nodeID];
             node.value+=value*(qr.high-qr.low+1);
-            node.asValue+=value;
+
+            int leftID=childID(nodeID, true);
+            int rightID=childID(nodeID, false);
 
             if(qr==nr){
                 node.lazy+=value;
+                node.asValue+=value;
             }else{
-                lazyUpdate(qr, childID(nodeID, true), value);
-                lazyUpdate(qr, childID(nodeID, false), value);
+                lazyUpdate(qr, leftID, value);
+                lazyUpdate(qr, rightID, value);
             }
         }
     public:
         SegmentTree(const std::vector<T>& _data):
         realSize(_data.size()),
-        nodes(std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1){;
+        nodes(std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1){
 
             int fdID=firstFloorID();
 
@@ -144,12 +148,13 @@ namespace sgjr{
             auto shift=(int)((nodeID-(std::pow(2, nh)-1))*std::pow(2, h-nh-1));
             return {shift, shift+sz-1};
         }
-
         auto assocQuery(Range r) -> T {
-            const auto l=rangeQuery(r, 0);
-            return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
-                return assocFunc(s, nodes[i2].asValue);
-            });
+            auto l=rangeQuery(r, 0);
+            T best=nodes[l.front()].asValue;
+            for(auto id : l){
+                best=assocFunc(best, nodes[id].asValue);
+            }
+            return best;
         }
         auto sumQuery(Range r) -> T {
             const auto l=rangeQuery(r, 0);
@@ -157,12 +162,6 @@ namespace sgjr{
                 return s+nodes[i2].value;
             });
         }
-        /**
-         * @brief just add in case of default tree. If OperationFunction is overriden - it will perform whatever u want :)
-         * 
-         * @param r 
-         * @param v 
-         */
         void lazyAdd(Range r, const T v){
             lazyUpdate(r, 0, v);
         }
