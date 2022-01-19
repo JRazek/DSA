@@ -7,116 +7,164 @@
 #include <list>
 #include <iostream>
 #include <numeric>
-#include <functional>
+#include <algorithm>
 
 namespace sgjr{
     //O(logn) query time
     //O(2N) space
     //O(N) preprocess
 
+    template<typename T>
+    struct minimum{
+        auto operator()(const T& a, const T& b) const noexcept -> T
+        { return (a<b?a:b); }
+    };
+    template<typename T>
+    struct maximum{
+        auto operator()(const T& a, const T& b) const noexcept -> T
+        { return (a>b?a:b); }
+    };
+
     template<
         typename T = int64_t,
         typename Y = void*,
-        typename OperationFunc = std::plus<T>,
-        typename AssocFunc = std::greater<T>,
+        typename AssocFunc = maximum<T>,
         typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
     >
     class SegmentTree{
     public:
-        struct Node{
-            T numericVal;
-            Y data;
-        };
         struct Range{
-            u_int low;
-            u_int high;
+            int low;
+            int high;
             Range common(Range rhs) const{
                 return {std::max(low, rhs.low), std::min(high, rhs.high)};
             }
             bool operator==(const Range& r){
                 return low==r.low&&high==r.high;
             };
+            bool operator!=(const Range& r){
+                return !(*this==r);
+            };
         };
     protected:
+    
+        int realSize;
+        struct Node{
+            T value=T();
+            T asValue=T();
+            T lazy=T();
+        };
         std::vector<Node> nodes;
-        u_int realSize;
-        std::vector<T> lazyValues;
-        OperationFunc operationFunc;
         AssocFunc assocFunc;
+        
+        auto rangeQuery(Range qr, int nodeID) -> std::list<int> {
+            if(nodeID>=nodes.size()) return {};
 
-        void lazyProp(u_int parent){
-            Range nr=nodeRange(parent);
-            nodes[parent].numericVal+=lazyValues[parent]*(nr.high-nr.low+1);
-            lazyValues[childID(parent, true)]+=lazyValues[parent];
-            lazyValues[childID(parent, false)]+=lazyValues[parent];
-            lazyValues[parent]=0;
-        }
-        std::list<u_int> rangeQuery(Range r, u_int parent, T lazyTail=T()) {
-            Range nr=nodeRange(parent);
-            r=r.common(nr);
-            if(r.low > r.high)
-                return {};
-                
-            lazyProp(parent);
-            if(nr==r){
-                lazyValues[parent]+=lazyTail;
-                return {parent};
-            }else{
-                nodes[parent].numericVal+=lazyTail*(r.high-r.low+1);
+            auto nr=nodeRange(nodeID);
+            qr=qr.common(nr);
+            if(qr.low>qr.high) return {};
+            
+            auto& node=nodes[nodeID];
+            std::list<int> result;
+
+
+            int leftID=childID(nodeID, true);
+            int rightID=childID(nodeID, false);
+
+            //it will only go one level deeper due to full overlap condition.
+            lazyUpdate({nr.low, (nr.low+nr.high)/2}, leftID, node.lazy);
+            lazyUpdate({(nr.low+nr.high)/2+1, nr.high}, rightID, node.lazy);
+            node.lazy=T();
+
+            if(qr==nr) result.emplace_back(nodeID); 
+            else{
+                result.splice(result.end(), rangeQuery(qr, leftID));
+                result.splice(result.end(), rangeQuery(qr, rightID));
             }
-            std::list<u_int> left = rangeQuery(r, childID(parent, true), lazyTail);
-            std::list<u_int> right = rangeQuery(r, childID(parent, false), lazyTail);
+            node.asValue=assocFunc(nodes[leftID].asValue, nodes[rightID].asValue);
+            return result;
+        }
+        auto lazyUpdate(Range qr, int nodeID, int value) -> void {
+            if(nodeID>=nodes.size()) return;
+            
+            auto nr=nodeRange(nodeID);
+            qr=qr.common(nr);
+            if(qr.low>qr.high) return;
 
-            left.splice(left.begin(), right);
+            auto& node=nodes[nodeID];
+            node.value+=value*(qr.high-qr.low+1);
+            node.asValue+=value;
 
-            return left;
+            if(qr==nr){
+                node.lazy+=value;
+            }else{
+                lazyUpdate(qr, childID(nodeID, true), value);
+                lazyUpdate(qr, childID(nodeID, false), value);
+            }
         }
     public:
-
-        SegmentTree(const std::vector<Node>& _data):
-        nodes(std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1, {0, Y()}),
+        SegmentTree(const std::vector<T>& _data):
         realSize(_data.size()),
-        lazyValues(nodes.size()) {
-            std::copy(_data.begin(), _data.end(), nodes.begin()+firstFloorID());
-            u_int fdID=firstFloorID();
+        nodes(std::pow(2, (std::ceil(std::log2(_data.size())) + 1)) - 1){;
+
+            int fdID=firstFloorID();
+
+            for(int i=0;i<_data.size();i++){
+                nodes[fdID+i].value=_data[i];
+            }
             for(int i = firstFloorID()-1; i>=0; i--){
-                const T left=nodes[childID(i, true)].numericVal;
-                const T right=nodes[childID(i, false)].numericVal;
-                nodes[i].numericVal = operationFunc(left, right);
+                auto leftID=childID(i, true);
+                auto rightID=childID(i, false);
+                
+                auto& node=nodes[i];
+                node.value=nodes[leftID].value+nodes[rightID].value;
+                node.asValue=assocFunc(nodes[leftID].value, nodes[rightID].value);
             }
         }
 
-        u_int height() const{
+        auto height() const -> int {
             return height(nodes.size());
         }
-        u_int height(u_int nodeID) const{
+        auto height(int nodeID) const -> int {
             return std::log2(nodeID+1);
         }
-        u_int firstFloorID() const{
+        auto firstFloorID() const -> int {
             return std::pow(2, height()-1)-1;
         }
-        u_int childID(u_int parentID, bool left) const{
-            u_int t=(parentID + 1)*2 + !left - 1;
-            return t<nodes.size()?t:parentID;
+        auto childID(int parentID, bool left) const -> int{
+            return (parentID + 1)*2-left;
         }
-        u_int parentID(u_int childID) const{
+        auto parentID(int childID) const -> int {
             return (childID - 1)/2;
         }
-        Range nodeRange(u_int nodeID) const{
-            u_int nh=height(nodeID);
-            u_int h=height();
-            u_int sz=std::pow(2, h-nh-1);
-            u_int shift=(nodeID-((u_int)std::pow(2, nh)-1))*std::pow(2, h-nh-1);
+        auto nodeRange(int nodeID) const -> Range {
+            auto nh=height(nodeID);
+            auto h=height();
+            auto sz=(int)(std::pow(2, h-nh-1));
+            auto shift=(int)((nodeID-(std::pow(2, nh)-1))*std::pow(2, h-nh-1));
             return {shift, shift+sz-1};
         }
-        T rangeQuery(Range r){
-            const auto l=rangeQuery(r, 0, 0);
+
+        auto assocQuery(Range r) -> T {
+            const auto l=rangeQuery(r, 0);
             return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
-                return operationFunc(s, nodes[i2].numericVal);
+                return assocFunc(s, nodes[i2].asValue);
             });
         }
+        auto sumQuery(Range r) -> T {
+            const auto l=rangeQuery(r, 0);
+            return std::accumulate(l.begin(), l.end(), T(), [&](const auto s, const auto i2){
+                return s+nodes[i2].value;
+            });
+        }
+        /**
+         * @brief just add in case of default tree. If OperationFunction is overriden - it will perform whatever u want :)
+         * 
+         * @param r 
+         * @param v 
+         */
         void lazyAdd(Range r, const T v){
-            rangeQuery(r, 0, v);
+            lazyUpdate(r, 0, v);
         }
     };
 }
