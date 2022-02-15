@@ -7,14 +7,13 @@ struct UnionNode{
 	T data;
 	UnionNode(): parent(this), data(T()){}
 	UnionNode* getRoot(){
-		UnionNode* root=(parent==this ? this : parent->getRoot());
-		parent=root;
-		return root;
+		parent=(parent==this ? this : parent->getRoot());
+		return parent;
 	}
 	static void joinUnion(UnionNode* n1, UnionNode* n2){
 		UnionNode* r1=n1->getRoot();
 		UnionNode* r2=n2->getRoot();
-		r1=r2->parent;
+		r1->parent=r2;
 	}
 };
 
