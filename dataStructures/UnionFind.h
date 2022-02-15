@@ -10,10 +10,9 @@ struct UnionNode{
 		parent=(parent==this ? this : parent->getRoot());
 		return parent;
 	}
-	static void joinUnion(UnionNode* n1, UnionNode* n2){
+	void joinUnion(UnionNode* n1){
 		UnionNode* r1=n1->getRoot();
-		UnionNode* r2=n2->getRoot();
-		r1->parent=r2;
+		r1->parent=getRoot();
 	}
 };
 
