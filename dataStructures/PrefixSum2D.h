@@ -11,10 +11,11 @@ namespace dsjr{
     //O(n) preprocess
 
     template<
-        typename T = u_int64_t,
+        typename T = long long,
         typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
     >
     class PrefixSUM2D{
+    protected:
         uint32_t cols, rows;
         std::vector<std::vector<T>> data;
 
@@ -50,6 +51,28 @@ namespace dsjr{
             x1++;
             y1++;
             return data[x1][y1] - data[x0-1][y1] - data[x1][y0-1] + data[x0-1][y0-1];
+        }
+    };
+
+    template<
+        typename T = long long,
+        typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
+    >
+    class PrefixSum1D : protected PrefixSUM2D<T> {
+        using Base=PrefixSUM2D<T>;
+    public:
+        PrefixSum1D(uint32_t size):
+        Base(size, 1){}
+        PrefixSum1D(const std::vector<T>& _data):
+        Base(_data.size(), 1){
+            for(int i=0;i<_data.size();i++) Base::setCell(i, 0, _data[i]);
+            Base::precompute();
+        }
+        T rangeSum(uint32_t low, uint32_t high) const{
+            return PrefixSUM2D<T>::rangeSum(low, 0, high, 0);
+        }
+        void setCell(uint32_t x, const T &val){
+            Base::setCell(x, 0, val);
         }
     };
 }
