@@ -62,6 +62,19 @@ struct Matrix{
     auto operator[](const u_int32_t y) -> std::array<T, M>&{
         return a[y];
     }
+    auto determinant() const requires(M==N){
+        auto det=T();
+        for(auto x=0;x<N;x++){
+            auto tmp1=T(1);
+            auto tmp2=T(1);
+            for(auto y=0;y<N;y++){
+                tmp1*=a[y][(x+y)%M];
+                tmp2*=a[y][(N-1+x-y)%M];
+            }
+            det+=tmp1-tmp2;
+        }
+        return det;
+    }
         
 private:
 
