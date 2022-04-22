@@ -5,6 +5,7 @@
 #include <array>
 #include <algorithm>
 #include "Matrix.h"
+#include <random>
 
 
 namespace jr{
@@ -23,7 +24,7 @@ constexpr auto as_integer(Enumeration const value) -> typename std::underlying_t
 template<int N>
 constexpr auto build_s_box(){
     constexpr auto seed=__TIMESTAMP__;
-    std::default_random_engine e;
+    constexpr std::default_random_engine e;
 
     Matrix<N, N, u_int8_t> s_box;//TODO - make it an ascending arithmetic sequence 0 to N*N-1;
     
