@@ -1,3 +1,6 @@
+#ifndef JR_MATRIX_H
+#define JR_MATRIX_H
+
 #include <iostream>
 #include <array>
 #include <bitset>
@@ -198,3 +201,6 @@ auto operator<<(std::ostream& os, Matrix<N, M, T> const& m) -> std::ostream&{
     return os;
 }
 }
+
+
+#endif //JR_MATRIX_H
