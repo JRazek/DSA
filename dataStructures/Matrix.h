@@ -87,12 +87,13 @@ struct Matrix{
 
         std::cout<<mat<<'\n';
     }
-    auto element_wise_xor(Matrix const& m) -> void{
+    auto element_wise_xor(Matrix const& m) -> Matrix&{
         for(auto x=0;x<M;++x){
             for(auto y=0;y<N;++y){
                 a[y][x]^=m[y][x];
             }
         }
+        return *this;
     }
         
 private:
