@@ -6,11 +6,13 @@
 #include <bitset>
 #include <numeric>
 #include <algorithm>
+#include <cstdint>
+#include <cstdio>
 
 namespace jr{
 template<
-  u_int32_t N,
-  u_int32_t M,
+  std::size_t N,
+  std::size_t M,
   typename T
 >
 struct Matrix{
@@ -22,7 +24,7 @@ struct Matrix{
     a(arr){}
 
     template<
-        u_int32_t X
+        std::size_t X
     >
     auto operator*(Matrix<M, X, T> const& rhs) const -> Matrix<N, X, T>{
         Matrix<N, X, T> res;
@@ -62,15 +64,20 @@ struct Matrix{
         return *this;
     }
     
-    auto operator[](const u_int32_t y) const -> std::array<T, M> const&{
+    auto operator[](const std::size_t y) const -> std::array<T, M> const&{
         return a[y];
     }
-    auto operator[](const u_int32_t y) -> std::array<T, M>&{
+    auto operator[](const std::size_t y) -> std::array<T, M>&{
         return a[y];
+    }
+    
+    auto determinant() const requires(N==M && N>3){
+        auto det=T();
+        //la place placeholder
+        return det;
     }
 
-    //FIXME - implement La' Places algorithm
-    auto determinant() const requires(M==N && M<=3){
+    auto determinant() const requires(N==M && N==3){
         auto det=T();
         for(auto x=0;x<N;x++){
             auto tmp1=T(1);
@@ -82,6 +89,12 @@ struct Matrix{
             det+=tmp1-tmp2;
         }
         return det;
+    }
+    auto determinant() const requires(N==M && N==2){
+        return a[0][0]*a[1][1]-a[0][1]*a[1][0];
+    }
+    auto determinant() const requires(N==M && N==1){
+        return a[0][0];
     }
     auto gauss_elimination(){
         auto& mat=*this;
@@ -154,7 +167,7 @@ private:
     }
 
     template<
-        u_int32_t X
+        std::size_t X
     >
     static inline auto multiply(Matrix const& lhs, Matrix<M, X, T> const& rhs, Matrix<N, X, T>& res) -> void{
         for(auto y=0;y<N;y++){
@@ -183,8 +196,8 @@ private:
 };
 
 template<
-  u_int32_t N,
-  u_int32_t M,
+  std::size_t N,
+  std::size_t M,
   typename T
 >
 auto operator<<(std::ostream& os, Matrix<N, M, T> const& m) -> std::ostream&{
