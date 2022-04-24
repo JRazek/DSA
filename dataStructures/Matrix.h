@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
+#include <cmath>
 
 namespace jr{
 template<
@@ -20,6 +21,7 @@ struct Matrix{
     
     Matrix():
     a({}){};
+    
     Matrix(std::array<std::array<T, M>, N> const& arr):
     a(arr){}
 
@@ -44,7 +46,6 @@ struct Matrix{
         multiply(*this, scalar);
         return *this;
     }
-
     auto operator+(Matrix const& rhs) const -> Matrix{
         auto res=*this;
         add(*this, rhs, res);
@@ -63,7 +64,6 @@ struct Matrix{
         subtract(*this, rhs, *this);
         return *this;
     }
-    
     auto operator[](const std::size_t y) const -> std::array<T, M> const&{
         return a[y];
     }
@@ -71,12 +71,40 @@ struct Matrix{
         return a[y];
     }
     
+    /**
+     * @brief takes O(N^2*M) time and O(N^2*M) memory
+     * 
+     */
     auto determinant() const requires(N==M && N>3){
+
+        /**
+         * @brief copies matrix with erased row and column
+         * 
+         */
+        auto make_matrix=[](const auto y_erased, const auto x_erased, Matrix const& m)->Matrix<N-1, M-1, T>{
+            Matrix<N-1, M-1, T> res;
+            for(auto y_dest=0, y_from=0; y_dest<N-1; y_dest++, y_from++){
+                if(y_from==y_erased) y_from++;
+                for(auto x_dest=0, x_from=0; x_dest<N-1 && y_from<N; x_dest++, x_from++){
+                    if(x_from==x_erased) x_from++;
+                    res[y_dest][x_dest]=m[y_from][x_from];
+                }
+            }
+            return res;
+        };
+
         auto det=T();
-        //la place placeholder
+        const auto x=0u;
+        for(auto y=0;y<N;y++){
+            det+=a[y][x]*std::pow(-1, y+x)*make_matrix(y, x, *this).determinant();
+        }
         return det;
     }
 
+    /**
+     * @brief takes O(3*3) time and O(1) memory
+     * 
+     */
     auto determinant() const requires(N==M && N==3){
         auto det=T();
         for(auto x=0;x<N;x++){
@@ -90,6 +118,11 @@ struct Matrix{
         }
         return det;
     }
+
+    /**
+     * @brief takes O(2*2) time and O(1) memory
+     * 
+     */
     auto determinant() const requires(N==M && N==2){
         return a[0][0]*a[1][1]-a[0][1]*a[1][0];
     }
@@ -98,7 +131,7 @@ struct Matrix{
     }
     auto gauss_elimination(){
         auto& mat=*this;
-        sort_matrix(mat);
+        sort_rows(mat);
         row_echelon(mat);
 
         std::cout<<mat<<'\n';
@@ -117,7 +150,7 @@ private:
      * @brief sorts the rows in non ascending order.
      * takes O(N*M) additional memory and O(N*M*log(N)) time complexity
      */
-    static inline auto sort_matrix(Matrix& mat) -> void{
+    static inline auto sort_rows(Matrix& mat) -> void{
         using row_type=std::array<std::pair<std::bitset<M>, int>, N>;
         row_type bits;
         for(auto i=0;i<N;i++) {
