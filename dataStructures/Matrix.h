@@ -94,7 +94,7 @@ struct Matrix{
         };
 
         auto det=T();
-        const auto x=0u;
+        const auto x=std::size_t(0); //fixed column for row reducing. Why not
         for(auto y=0;y<N;y++){
             det+=a[y][x]*std::pow(-1, y+x)*make_matrix(y, x, *this).determinant();
         }
@@ -131,6 +131,28 @@ struct Matrix{
     }
     auto gauss_elimination(){
         auto& mat=*this;
+        
+        /**
+         * @brief sorts the rows in non ascending order.
+         * takes O(N*M) additional memory and O(N*M*log(N)) time complexity
+         */
+        auto sort_rows =[](Matrix& mat) -> void{
+            using row_type=std::array<std::pair<std::bitset<M>, int>, N>;
+            row_type bits;
+            for(auto i=0;i<N;i++) {
+                for(auto j=0;j<M;j++) bits[i].first[j]=mat[i][j];
+                bits[i].second=i;
+            }
+            std::ranges::sort(bits,
+            [](auto const& r1, auto const& r2){
+                return r1.first.to_ullong()>r2.first.to_ullong();
+            });
+            
+            auto res=Matrix();
+            for(auto y=0;y<N;y++) res[y]=mat[bits[y].second];
+            mat=res;
+        };
+
         sort_rows(mat);
         row_echelon(mat);
 
@@ -146,26 +168,6 @@ struct Matrix{
     }
         
 private:
-    /**
-     * @brief sorts the rows in non ascending order.
-     * takes O(N*M) additional memory and O(N*M*log(N)) time complexity
-     */
-    static inline auto sort_rows(Matrix& mat) -> void{
-        using row_type=std::array<std::pair<std::bitset<M>, int>, N>;
-        row_type bits;
-        for(auto i=0;i<N;i++) {
-            for(auto j=0;j<M;j++) bits[i].first[j]=mat[i][j];
-            bits[i].second=i;
-        }
-        std::ranges::sort(bits,
-        [](auto const& r1, auto const& r2){
-            return r1.first.to_ullong()>r2.first.to_ullong();
-        });
-        
-        auto res=Matrix();
-        for(auto y=0;y<N;y++) res[y]=mat[bits[y].second];
-        mat=res;
-    }
 
     /**
      * @param mat matrix with sorted rows in non ascending order.
@@ -186,9 +188,7 @@ private:
      * @param mat matrix with sorted rows in non ascending order.
      */
     static inline auto reduced_row_echelon(Matrix& mat) -> void{
-        // for(auto y=N-1,x=0;y>=0;y--){
-
-        // }
+        
     }
 
     static inline auto add_rows(std::array<T, M>& lhs, std::array<T, M> const& rhs) -> void{
