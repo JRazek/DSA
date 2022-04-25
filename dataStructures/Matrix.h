@@ -16,9 +16,11 @@ template<
   std::size_t M,
   typename T
 >
-struct Matrix{
+class Matrix{
     std::array<std::array<T, M>, N> a;
     
+public:
+
     Matrix() noexcept:
     a({}){};
     
@@ -229,6 +231,48 @@ private:
             for(auto x=0;x<M;x++)
                 res[y][x]=lhs[y][x]-rhs[y][x];
     }
+    // template<
+    //     bool constant=false
+    // >
+    struct Iterator{
+        using iterator_category=std::forward_iterator_tag;
+        using differece_type=std::ptrdiff_t;
+        using value_type=std::array<T, M>;
+        using pointer=value_type*;
+        using reference=value_type&;
+
+        Iterator(pointer ptr):_ptr(ptr){}
+
+        auto operator*() -> reference {return *_ptr;};
+
+        auto operator->() -> pointer {return _ptr;};
+        auto operator++() -> Iterator& { ++_ptr; return *this; };//preincrement ++it
+        auto operator++(int) -> Iterator { auto tmp=*this; this->operator++; return tmp; };//postincrement it++
+
+        friend auto operator==(Iterator const& rhs, Iterator const& lhs){ return rhs._ptr==lhs._ptr; };
+        friend auto operator!=(Iterator const& rhs, Iterator const& lhs){ return rhs._ptr!=lhs._ptr; };
+
+    private:
+        pointer _ptr;
+    };
+    using iterator=Iterator;
+    // using const_iterator=Iterator<true>;
+public:
+
+    auto begin() noexcept -> iterator{
+        return iterator(&a.front());
+    }
+
+    auto end() noexcept -> iterator{
+        return iterator(&a.back());
+    }
+    // auto cbegin() const noexcept -> const_iterator{
+    //     return const_iterator(&a.front());
+    // }
+
+    // auto cend() const noexcept -> const_iterator{
+    //     return const_iterator(&a.back());
+    // }
 };
 
 template<
