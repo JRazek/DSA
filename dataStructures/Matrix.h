@@ -17,67 +17,93 @@ template<
   typename T
 >
 class Matrix{
+protected:
     std::array<std::array<T, M>, N> a;
     
 public:
 
-    Matrix() noexcept:
+    constexpr Matrix() noexcept:
     a({}){};
     
-    Matrix(std::array<std::array<T, M>, N> const& arr) noexcept:
+    constexpr Matrix(std::array<std::array<T, M>, N> const& arr) noexcept:
     a(arr){}
+
+    constexpr Matrix(std::array<T, N*M> const& arr) noexcept{
+        for(auto y=0;y<N;y++){
+            for(auto x=0;x<M;x++){
+                a[y][x]=arr[y*M+x];
+            }
+        }
+    }
 
     template<
         std::size_t X
     >
-    auto operator*(Matrix<M, X, T> const& rhs) const noexcept -> Matrix<N, X, T>{
+    constexpr auto operator*(Matrix<M, X, T> const& rhs) const noexcept -> Matrix<N, X, T>{
         Matrix<N, X, T> res;
         multiply(*this, rhs, res);
         return res;
     }
-    auto operator*(const T scalar) const noexcept -> Matrix{
+    constexpr auto operator*(const T scalar) const noexcept -> Matrix{
         auto res=*this;
         multiply(res, scalar);
         return res;
     }
-    auto operator*=(Matrix<M, M, T> const& rhs) noexcept -> Matrix{
+    constexpr auto operator*=(Matrix<M, M, T> const& rhs) noexcept -> Matrix{
         multiply(*this, rhs, *this);
         return *this;
     }
-    auto operator*=(const T scalar) noexcept -> Matrix&{
+    constexpr auto operator*=(const T scalar) noexcept -> Matrix&{
         multiply(*this, scalar);
         return *this;
     }
-    auto operator+(Matrix const& rhs) const noexcept -> Matrix{
+    constexpr auto operator+(Matrix const& rhs) const noexcept -> Matrix{
         auto res=*this;
         add(*this, rhs, res);
         return res;
     }
-    auto operator+=(Matrix const& rhs) noexcept -> Matrix&{
+    constexpr auto operator+=(Matrix const& rhs) noexcept -> Matrix&{
         add(*this, rhs, *this);
         return *this;
     }
-    auto operator-(Matrix const& rhs) const noexcept -> Matrix{
+    constexpr auto operator-(Matrix const& rhs) const noexcept -> Matrix{
         auto res=*this;
         subtract(*this, rhs, res);
         return res;
     }
-    auto operator-=(Matrix const& rhs) noexcept -> Matrix&{
+    constexpr auto operator-=(Matrix const& rhs) noexcept -> Matrix&{
         subtract(*this, rhs, *this);
         return *this;
     }
-    auto operator[](const std::size_t y) const noexcept -> std::array<T, M> const&{
+    constexpr auto operator[](const std::size_t y) const noexcept -> std::array<T, M> const&{
         return a[y];
     }
-    auto operator[](const std::size_t y) noexcept -> std::array<T, M>&{
+    constexpr auto operator[](const std::size_t y) noexcept -> std::array<T, M>&{
         return a[y];
+    }
+
+    constexpr auto operator[](const std::pair<std::size_t, std::size_t> cell) const noexcept -> T const&{
+        return a[cell.first][cell.second];
+    }
+
+    constexpr auto operator[](const std::pair<std::size_t, std::size_t> cell) noexcept -> T&{
+        return a[cell.first][cell.second];
+    }
+
+    constexpr auto operator==(Matrix const& m) const noexcept -> bool{
+        for(auto y=0;y<N;y++){
+            for(auto x=0;x<M;x++){
+                if(a[y][x]!=m[y][x]) return false;
+            }
+        }
+        return true;
     }
     
     /**
      * @brief takes O(N^2*M) time and O(N^2*M) memory
      * 
      */
-    auto determinant() const noexcept requires(N==M && N>3){
+    constexpr auto determinant() const noexcept requires(N==M && N>3){
 
         /**
          * @brief copies matrix with erased row and column
@@ -107,7 +133,7 @@ public:
      * @brief takes O(3*3) time and O(1) memory
      * 
      */
-    auto determinant() const noexcept requires(N==M && N==3){
+    constexpr auto determinant() const noexcept requires(N==M && N==3){
         auto det=T();
         for(auto x=0;x<N;x++){
             auto tmp1=T(1);
@@ -125,13 +151,13 @@ public:
      * @brief takes O(2*2) time and O(1) memory
      * 
      */
-    auto determinant() const noexcept requires(N==M && N==2){
+    constexpr auto determinant() const noexcept requires(N==M && N==2){
         return a[0][0]*a[1][1]-a[0][1]*a[1][0];
     }
-    auto determinant() const noexcept requires(N==M && N==1){
+    constexpr auto determinant() const noexcept requires(N==M && N==1){
         return a[0][0];
     }
-    auto gauss_elimination() noexcept{
+    constexpr auto gauss_elimination() noexcept{
         auto& mat=*this;
         
         /**
@@ -160,7 +186,7 @@ public:
 
         std::cout<<mat<<'\n';
     }
-    auto element_wise_xor(Matrix const& m) noexcept -> Matrix&{
+    constexpr auto element_wise_xor(Matrix const& m) noexcept -> Matrix&{
         for(auto x=0;x<M;++x){
             for(auto y=0;y<N;++y){
                 a[y][x]^=m[y][x];
@@ -169,7 +195,7 @@ public:
         return *this;
     }
         
-    auto transpose() const noexcept -> Matrix<M, N, T>{
+    constexpr auto transpose() const noexcept -> Matrix<M, N, T>{
         throw std::logic_error("Function not yet implemented");
     }
 private:
@@ -177,7 +203,7 @@ private:
     /**
      * @param mat matrix with sorted rows in non ascending order.
      */
-    static inline auto row_echelon(Matrix& mat) noexcept -> void{
+    constexpr static inline auto row_echelon(Matrix& mat) noexcept -> void{
         for(auto y=0,x=0;y<N;y++){
             while(x!=M-1 && !mat[y][x]) x++;
             if(x==M-1) break;
@@ -194,20 +220,20 @@ private:
     /**
      * @param mat matrix with sorted rows in non ascending order.
      */
-    static inline auto reduced_row_echelon(Matrix& mat) noexcept -> void{
+    constexpr static inline auto reduced_row_echelon(Matrix& mat) noexcept -> void{
         
     }
 
-    static inline auto add_rows(std::array<T, M>& lhs, std::array<T, M> const& rhs) noexcept -> void{
+    constexpr static inline auto add_rows(std::array<T, M>& lhs, std::array<T, M> const& rhs) noexcept -> void{
         for(auto i=0;i<M;i++) lhs[i]+=rhs[i];
     }
 
-    static inline auto multiply_row(std::array<T, M>& lhs, const T rhs) noexcept -> void{
+    constexpr static inline auto multiply_row(std::array<T, M>& lhs, const T rhs) noexcept -> void{
         for(auto i=0;i<M;i++) lhs[i]*=rhs;
     }
 
     template<std::size_t X>
-    static inline auto multiply(Matrix const& lhs, Matrix<M, X, T> const& rhs, Matrix<N, X, T>& res) noexcept -> void{
+    constexpr static inline auto multiply(Matrix const& lhs, Matrix<M, X, T> const& rhs, Matrix<N, X, T>& res) noexcept -> void{
         for(auto y=0;y<N;y++){
             for(auto x=0;x<X;x++){
                 auto sum=T();
@@ -216,17 +242,17 @@ private:
             }
         }
     }
-    static inline auto multiply(Matrix& res, const T scalar) noexcept -> void{
+    constexpr static inline auto multiply(Matrix& res, const T scalar) noexcept -> void{
         for(auto y=0;y<N;y++)
             for(auto x=0;x<M;x++)
                 res[y][x]*=scalar;
     }
-    static inline auto add(Matrix const& lhs, Matrix const& rhs, Matrix& res) noexcept -> void{
+    constexpr static inline auto add(Matrix const& lhs, Matrix const& rhs, Matrix& res) noexcept -> void{
         for(auto y=0;y<N;y++)
             for(auto x=0;x<M;x++)
                 res[y][x]=lhs[y][x]+rhs[y][x];
     }
-    static inline auto subtract(Matrix const& lhs, Matrix const& rhs, Matrix& res) noexcept -> void{
+    constexpr static inline auto subtract(Matrix const& lhs, Matrix const& rhs, Matrix& res) noexcept -> void{
         for(auto y=0;y<N;y++)
             for(auto x=0;x<M;x++)
                 res[y][x]=lhs[y][x]-rhs[y][x];
@@ -259,11 +285,11 @@ private:
     // using const_iterator=Iterator<true>;
 public:
 
-    auto begin() noexcept -> iterator{
+    constexpr auto begin() noexcept -> iterator{
         return iterator(&a.front());
     }
 
-    auto end() noexcept -> iterator{
+    constexpr auto end() noexcept -> iterator{
         return iterator(&a.back());
     }
     // auto cbegin() const noexcept -> const_iterator{
