@@ -9,6 +9,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <cmath>
+#include <iterator>
+#include <concepts>
 
 namespace jr{
 template<
@@ -35,7 +37,6 @@ public:
             }
         }
     }
-
     template<
         std::size_t X
     >
@@ -157,7 +158,7 @@ public:
     constexpr auto determinant() const noexcept requires(N==M && N==1){
         return a[0][0];
     }
-    constexpr auto gauss_elimination() noexcept{
+    constexpr auto gauss_elimination() noexcept -> Matrix<N, M, T>&{
         auto& mat=*this;
         
         /**
@@ -183,8 +184,10 @@ public:
 
         sort_rows(mat);
         row_echelon(mat);
+        // reduced_row_echelon(mat);
+        // std::cout<<mat<<'\n';
 
-        std::cout<<mat<<'\n';
+        return *this;
     }
     constexpr auto element_wise_xor(Matrix const& m) noexcept -> Matrix&{
         for(auto x=0;x<M;++x){
@@ -196,24 +199,26 @@ public:
     }
         
     constexpr auto transpose() const noexcept -> Matrix<M, N, T>{
-        throw std::logic_error("Function not yet implemented");
+        Matrix<M, N, T> res;
+        for(auto y=0;y<N;++y){
+            for(auto x=0;x<M;++x){
+                res[x][y]=a[y][x];
+            }
+        }
+        return res;
     }
+    
+    constexpr auto inverse() noexcept -> Matrix<N, M, T>&{
+
+    }
+
 private:
 
     /**
      * @param mat matrix with sorted rows in non ascending order.
      */
     constexpr static inline auto row_echelon(Matrix& mat) noexcept -> void{
-        for(auto y=0,x=0;y<N;y++){
-            while(x!=M-1 && !mat[y][x]) x++;
-            if(x==M-1) break;
-            for(auto yt=y+1;yt<N && mat[yt][x];yt++){
-                auto lcm=std::lcm(mat[y][x], mat[yt][x]);
-                multiply_row(mat[y], -lcm/mat[y][x]);
-                multiply_row(mat[yt], lcm/mat[yt][x]);
-                add_rows(mat[yt], mat[y]);
-            }   
-        }
+
     }
 
     
@@ -292,13 +297,6 @@ public:
     constexpr auto end() noexcept -> iterator{
         return iterator(&a.back());
     }
-    // auto cbegin() const noexcept -> const_iterator{
-    //     return const_iterator(&a.front());
-    // }
-
-    // auto cend() const noexcept -> const_iterator{
-    //     return const_iterator(&a.back());
-    // }
 };
 
 template<

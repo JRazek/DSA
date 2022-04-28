@@ -13,7 +13,9 @@
 namespace jr{
 namespace crypt{
 
-class Sbox : public Matrix<16, 16, u_int8_t>{
+using aes_matrix=Matrix<16, 16, u_int8_t>;
+
+class Sbox : public aes_matrix{
 public:
     constexpr Sbox() noexcept=default;
     constexpr Sbox(std::array<std::array<u_int8_t, 16>, 16> const& arr) noexcept: Matrix(arr) {}
@@ -77,6 +79,23 @@ public:
     constexpr static inline auto N=as_integer(aes_type);
     constexpr static inline auto s_box=build_s_box();
     constexpr static inline auto reversed_s_box=s_box.reverse();
+
+
+
+    auto encrypt(std::vector<u_int8_t> const& data, std::vector<u_int8_t> const& key) -> std::vector<u_int8_t> {
+        std::vector<aes_matrix> matrices;
+
+        auto mat_count=std::ceil(data.size()/256.f);
+
+        for(auto i=0;i<mat_count;i++){
+            aes_matrix m;//todo - fill with data.
+            
+            // matrices.emplace_back();
+        }
+
+
+        return {};
+    };
 };
 
 
