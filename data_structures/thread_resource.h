@@ -63,8 +63,8 @@ class ThreadResource {
     }
 
    private:
-    ResourceType resource_;
     LockY lock_;
+    ResourceType resource_;
   };
 
   [[nodiscard]] auto access() { return Access<AccessType::Exclusive, LockT>(mutex_, res_); }
@@ -118,36 +118,3 @@ struct ExcelusiveResource : public ThreadResource<T, std::mutex, std::scoped_loc
 
   using Base::Base;
 };
-
-auto main() -> int {
-  ExcelusiveResource<Foo> shared(0);
-
-  std::binary_semaphore semaphore{1};
-
-  auto t1 = std::jthread([&shared, &semaphore]() mutable {
-    for (int i = 0; i < 1e6; i++) {
-      auto access = shared.access();
-      access->foo_++;
-    }
-  });
-
-  auto t2 = std::jthread([&shared, &semaphore]() mutable {
-    for (int i = 0; i < 1e6; i++) {
-      auto access = shared.access();
-      access->foo_++;
-    }
-  });
-
-  auto t3 = std::jthread([&shared]() mutable {
-    auto& foo = shared.access()->foo_;
-
-    for (int i = 0; i < 1e6; i++) {
-      ++foo;
-    }
-  });
-
-  t1.join();
-  t2.join();
-
-  std::cout << shared.access()->foo_ << '\n';
-}

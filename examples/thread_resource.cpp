@@ -3,13 +3,15 @@
 auto main() -> int {
   ExcelusiveResource<Foo> shared(0);
 
-  std::binary_semaphore semaphore{1};
+  std::binary_semaphore semaphore{0};
 
   auto t1 = std::jthread([&shared, &semaphore]() mutable {
     for (int i = 0; i < 1e6; i++) {
       auto access = shared.access();
       access->foo_++;
     }
+
+	semaphore.release();
   });
 
   auto t2 = std::jthread([&shared, &semaphore]() mutable {
@@ -17,6 +19,8 @@ auto main() -> int {
       auto access = shared.access();
       access->foo_++;
     }
+
+	semaphore.acquire();
   });
 
   auto t3 = std::jthread([&shared]() mutable {
